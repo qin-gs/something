@@ -12,7 +12,7 @@
 - 在提交前查看修改。
 - 提交修改。
 - 在修改完成后，如果发现错误，可以撤回提交并再次修改并提交。  
-![git工作流程](./img/git工作流程.bmp)  
+![git工作流程](./img/git工作流程.png)  
 
 工作区：电脑里能看到的目录  
 暂存区(stage/index)：.git/index目录  
@@ -45,7 +45,7 @@ pull.rebase=false
 credential.helper=manager
 credential.helper=manager
 user.name=qgs
-user.email=3210968849@qq.com
+user.email=test@qq.com
 core.repositoryformatversion=0
 core.filemode=false
 core.bare=false
@@ -78,9 +78,6 @@ git reset 回退版本
 git rm 删除工作区文件
 git mv 移动工作区文件
 
-git log 查看提交记录
-git blame 以列表的形式查看指定文件的修改记录
-
 git remote 远程仓库获取
 git fetch 从远程获取代码库
 git pull 下载 合并
@@ -101,10 +98,31 @@ git branch -d branchName 删除分支
 
 git checkout branchName 切换分支
 git checkout -b branchName 创建分支并切换
-git merge 合并分支
+git merge branchName 合并分支
+```
+有冲突时，手动合并  
+使用`git add`告诉`git`冲突已解决  
+
+
+```
+git log  查看提交记录
+        --oneline 查看简洁版本
+        --graph 查看分支情况
+        --reverse 逆序查看日志
+        --author 查看某用户的提交日志
+        --since, --after 指定日期
+        --before, --until
+
+git blame fileName 以列表的形式查看指定文件的修改记录
 ```
 
-
+####标签
+```
+git tag 查看已有标签
+git tag -a v1.0 创建带注解的标签
+git tag -d tagName 删除标签
+git show tagName 查看版本修改内容
+```
 
 
 
