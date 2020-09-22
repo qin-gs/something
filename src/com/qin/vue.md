@@ -178,10 +178,37 @@ function _init(options) {
     // 没有：不进入下一个生命周期阶段，需要用户手动执行vm.$mount
 }
 ```
+合并配置，调用一些初始化函数，触发生命周期钩子函数，调用$mount开启下一个阶段。
 
+```
+钩子函数(生命周期钩子名称 -> 钩子函数数组)
+callHook
+export const LIFECYCLE_HOOKS = [
+  'beforeCreate',
+  'created',
+  'beforeMount',
+  'mounted',
+  'beforeUpdate',
+  'updated',
+  'beforeDestroy',
+  'destroyed',
+  'activated',
+  'deactivated',
+  'errorCaptured'
+]
+```
 
-
-
+initLifecycle  
+给实例初始化了一些属性，包括以$开头的供用户使用的外部属性，
+也包括以_开头的供内部使用的内部属性。  
+```
+vm.$parent = parent
+vm.$root = parent ? parent.$root : vm
+```
+initEvents  
+父组件既可以给子组件上绑定自定义事件，也可以绑定浏览器原生事件。这两种事件有着不同的处理时机，浏览器原生事件是由父组件处理，
+而自定义事件是在子组件初始化的时候由父组件传给子组件，再由子组件注册到实例的事件系统中。  
+初始化事件函数initEvents实际上初始化的是父组件在模板中使用v-on或@注册的监听子组件内触发的事件。  
 
 
 
