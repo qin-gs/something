@@ -273,7 +273,7 @@ while循环, 不断向上级父组件的_provided属性值查找
 ```
 
 initState  
-初始化 实例的状态选项(props, data, methods, computed, watch)  
+初始化 实例的状态选项(props, methods, data, computed, watch)  
 vue2.0不再对数据进行侦测，将侦测粒度提升到组件，为组件新增了vm._watchers属性，存放该组件内用到的所有状态依赖  
 当状态变化时，通知组件，组件内部使用虚拟dom进行数据对比  
 
@@ -318,7 +318,8 @@ assertProp 判断父组件传递过来的真实值是否与prop的type类型匹�
 
 初始化methods  
 函数是否存在函数体  
-命名是否符合规范(_或$开头)  
+判断 method 中的某个方法名是否与 props 重复  
+命名是否符合规范(_或$开头就抛异常)  
 挂载到vm实例上  
 
 初始化data  
@@ -328,6 +329,29 @@ assertProp 判断父组件传递过来的真实值是否与prop的type类型匹�
 
 初始化computed  
 结果会被缓存，响应式属性变化时才会重新计算  
+```
+computed: {
+    // 函数，默认取值器
+    a: function() {
+        return this.x * 2
+    },
+    // 对象：包含取值器 和 存值器
+    b: {
+        get: function() {
+            return this.x + 2
+        },
+        set: function(x) {
+            return x - 2;
+        }
+    }
+    
+    initComputed() // 检查取值器
+    defineComputed() // 设置计算属性
+    
+    createComputedGetter()
+
+}
+```
 
 
 
