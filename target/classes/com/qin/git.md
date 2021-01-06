@@ -1,4 +1,4 @@
-####git
+#### git
 1.git是分布式的，svn不是  
 2.git内容按元数据方式存储，svn是按文件  
 3.git分支和svn不同  
@@ -18,7 +18,7 @@
 暂存区(stage/index)：.git/index目录  
 版本库：隐藏的.git目录  
 
-####创建仓库  
+#### 创建仓库  
 git init 生成.git目录，包含资源的元数据  
 git init newRepo  
 git add fileName  
@@ -60,7 +60,7 @@ core.ignorecase=true
 `git config --global user.name "qin"`  
 `git config --global user.email test@gmail.com`  
 
-####基本操作  
+#### 基本操作  
 创建保存项目的快照 与 之后的快照进行对比  
 ```
 git init 初始化仓库
@@ -116,7 +116,7 @@ git log  查看提交记录
 git blame fileName 以列表的形式查看指定文件的修改记录
 ```
 
-####标签
+#### 标签
 ```
 git tag 查看已有标签
 git tag -a v1.0 创建带注解的标签
