@@ -346,40 +346,108 @@ computed: {
     }
     
     initComputed() // 检查取值器
-    defineComputed() // 设置计算属性
+    defineComputed() // 为实例vm上设置计算属性
+    创建具有缓存功能的getter(createComputedGetter())
     
     createComputedGetter()
-
 }
 ```
+![computed属性原理](./img/computed属性原理.png)
+
+初始化watch  
+侦听某个已有的数据，当该数据发生变化时执行对应的回调函数  
+watch选项是一个对象，键时需要观察的表达式，值是对应回调函数(方法名，包含选项的对象)  
+```vue
+var vm = new Vue({
+  data: {a: 1, b: 2, c: 3},
+  watch: {
+    a: function(val, old) {
+      console.log('new: %s, old: %s', val, old)
+    },
+    b: 'someMethod', // 侦听方法
+    c: {
+      handler: function(val, old) {},
+      deep: true, // 深度监听，会在任何被侦听的对象的property改变时被调用，不论被嵌套多深
+    },    
+  }
+})
+```
+
+#### 模板编译阶段(获取用户传入的模板内容并将其编译成渲染函数)
+完整版(vue.js存在) 多一个编译器，自动将template选项中的模板字符串编译成渲染函数的代码renderjams  
+初始化 -> 模板编译 -> 挂载  
+```vue
+new Vue({
+  template: '<div>{{ hi }}</div>'
+})
+```
+运行版(vue.runtime.js不存在)  
+初始化 -> 挂载  
+```vue
+new Vue({
+  render(h) {
+    return h('div', this.hi)
+  }
+})
+```
+vm.$mount  
+1. 根据传入的el参数获取dom元素
+2. 用户没有首先render函数的情况下获取传入的模板template
+3. 将获取到的template编译成render函数
+
+1.1 el参数可以是元素 也可以是字符串类型的元素选择器  
+     获取到el对应的dom不允许为body和html(可能会破坏整个dom文档)  
+
+#### 挂载阶段
+创建vue实例并用其替换el选项对应的dom元素，将模板渲染到视图上，同时开启对模板中数据的监控，当数据发生变化时通知其依赖进行视图更新  
+
+### 销毁阶段
+vm.$destroy 将当前的vue实例从其父级实例中删除，取消当前实例上的所有依赖追踪并移除实例上的所有时间监听器  
+
+### 实例方法 (vm.$set, vm..$delete, vm.$watch)
+
+1. vm.$watch
+  观察vue实例变化的一个表达式或计算属性函数。回调函数得到的参数为新值和旧值。表达式直接说监督的键路径。
+   对于更复杂的表达式，用函数代替  
+  在编译(不是替换)对象或数组时，旧值将于新值相同，因为他们的引用执行同一个对象/数组。vue不会保留变异之前值的副本  
+  vm.$watch返回一个取消观察函数，用来停止触发回调
+   
+```vue
+var unwatch = vm.$watch('a', callback, {deep: true})
+选项 deep 发现对象内部值的变化
+immediate 将立即以表达式的当前值触发回调，不能在第一次回调时取消侦听给定的property(需要检测函数的可用性)
+unwatch() // 取消观察(watcher.teardown())
+```
+  深度观察  
+  成为被观察数据的依赖，创建watcher实例的时候把对象内部所有的值都帝国的读一遍  
+  watcher实例会被加入到对象内所有值的依赖列表中，之后当对象内的某个值发生变化是能够得到通知  
+
+2. vm.$set(target, propertyName/index, value) 
+  向响应式对象中添加一个属性，确保这个新属性时响应式的，且触发视图更新    
+  不能是vue实例，或vue实例的根数据对象  
+   如果传入的时数组并indes是有效索引的话，max(currLen, index)作为数组的新长度，使用splice方法添加近期  
+   ![vm.$set](./img/vm.$set.png)
+
+3. vm.$delete(target, propertyName/index) == Vue.delete
 
 
+### 事件方法
+1. vm.$on(event {Array | string}, callback)  
+2. vm.$emit(eventName {String}, [...args])
+监听当前实例上的自定义事件。事件可以有vm.$emit触发。回调函数接收所有传入事件触发函数的额外参数  
+   $on 订阅 将回调函数加入_events中  
+   $emit() 发布 从_events中获取事件名对应的回调函数，传入附加参数，执行回调函数  
+_event 生命周期初始化阶段的初始化事件initEvents函数中，给当前实例绑定_events属性并赋值为空对象  
+   所有绑定在该实例上的事件都会存储在该属性中
 
+3. vm.$off([event, callback])
+移除自定义事件监听器  
+   没有参数：移除所有事件监听器 (将_events清空)
+   只有事件：移除该事件所有的监听器 (遍历_events 将event数组中的每一个事件都递归调用$off移除掉)
+   同时提供事件和回调：只移除这个回调的监听器
 
-
-
-     
-     
-     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+4. vm.$once(event, callback)
+监听一个自定义事件，只触发一次
 
 
 
