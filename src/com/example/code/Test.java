@@ -1,4 +1,4 @@
-package com.qin.code;
+package com.example.code;
 
 
 public class Test {
