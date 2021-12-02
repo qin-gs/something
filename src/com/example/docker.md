@@ -149,7 +149,7 @@ docker run -d -p 8081:8080 --name tomcat-01 tomcat # 映射本机的8081端口�
 docker exec -it tomcat-01 /bin/bash
 
 部署 elasticsearch
-docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -e ES_JAVA_OTPS="-Xms64m -Xmx512m" elasticsearch:7.6.2
+docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -e ES_JAVA_OPTS="-Xms64m -Xmx512m" elasticsearch:7.6.2
 curl localhost:9200
 
 docker stats # 查看docker的内存使用情况
@@ -167,9 +167,26 @@ docker run -d -p 9000:9000 --restart=always -v /var/run/docker.sock:/var/run/doc
 
 
 
-rancher
+```shell
+提交容器
+
+docker commmit -m="描述信息" -a="作者" 容器id 目标镜像名:tag
+
+docker commit -m="tomcat加上webapp" -a="qgs" ea5d910ec335 tomcat-webapps:1.0
+docker run -d -p 8080:8080 --name tomcat01 tomcat-webapps:1.0
+```
 
 
+
+#### 容器数据卷
+
+一种同步机制(将数据持久化)
+
+```shell
+docker run -it -v 主机目录:容器目录
+
+docker run -it -v /Users/qgs/Desktop/docker:/usr/local/tomcat/webapps -p 8080:8080 tomcat-webapps:1.0 /bin/bash
+```
 
 
 
