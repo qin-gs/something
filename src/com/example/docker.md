@@ -186,6 +186,53 @@ docker run -d -p 8080:8080 --name tomcat01 tomcat-webapps:1.0
 docker run -it -v 主机目录:容器目录
 
 docker run -it -v /Users/qgs/Desktop/docker:/usr/local/tomcat/webapps -p 8080:8080 tomcat-webapps:1.0 /bin/bash
+
+
+docker run -it -v /Users/qgs/Desktop/centos:/home centos /bin/bash
+
+docker start 6798ad5a0ba1 
+docker attach 6798ad5a0ba1
+
+
+docker run -d -p 3306:3306 -v /Users/qgs/Desktop/docker/mysql/conf:/ect/mysql/conf.d -v //Users/qgs/Desktop/docker/mysql/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root mysql/mysql-server
+-d 后台运行
+-p 端口映射
+-v 卷挂载
+-e 环境配置
+--name 别名
+
+# 开启后需要创建用户然后授权，否则无法登录
+docker exec -it mysql /bin/bash
+mysql -uroot -p
+create user 'root'@'%' identified by 'root';
+grant all privileges on *.* to 'root'@'%';
+```
+
+
+
+具名挂载，匿名挂载
+
+```shell
+匿名挂载
+-v 不提供本地地址
+
+
+具名挂载
+-v 后面提供名字，不提供目录
+docker run -d -P --name nginx-1 -v name-nginx:/etc/nginx nginx
+
+docker volume ls # 列出所有的卷
+docker volume inspect mysql/mysql-server # 查看挂载信息
+
+区分两者：
+-v 容器内路径 # 匿名
+-v 卷名:容器内路径 # 具名
+-v /主机地址:容器内路径 # 指定路径挂载
+
+
+docker run -d -P --name nginx-1 -v name-nginx:/etc/nginx:ro nginx
+ro: 只能通过宿主机操作，容器内不能修改
+rw: 
 ```
 
 
