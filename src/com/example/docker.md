@@ -26,6 +26,28 @@ docker 命令 --helper
 https://docs.docker.com/reference/
 ```
 
+**容器 = 镜像 + 读写层**
+
+一个运行态容器（running container）被定义为一个可读写的统一文件系统加上隔离的进程空间和包含其中的进程。正是文件系统隔离技术使得Docker成为了一个前途无量的技术。一个容器中的进程可能会对文件进行修改、删除、创建，这些改变都将作用于可读写层（read-write layer）。
+
+![容器和镜像](./img/容器和镜像.png)
+
+
+
+为了将零星的数据整合起来，提出了镜像层（image layer）这个概念。一个层并不仅仅包含文件系统的改变，它还能包含了其他重要信息。
+
+元数据（metadata）就是关于这个层的额外信息，它不仅能够让Docker获取运行和构建时的信息，还包括父层的层次信息。需要注意，只读层和读写层都包含元数据。每一层都包括了一个指向父层的指针。如果一个层没有这个指针，说明它处于最底层。
+
+docker create 命令为指定的镜像（image）添加了一个可读写层，构成了一个新的容器。
+
+docker start命令为容器文件系统创建了一个进程隔离空间。注意，每一个容器只能够有一个进程隔离空间。
+
+docker run 命令先是利用镜像创建了一个容器，然后运行这个容器
+
+（docker run就是docker create和docker start两个命令的组合）
+
+docker ps 命令会列出所有运行中的容器。这隐藏了非运行态容器的存在，如果想要找出这些容器，我们需要使用docker ps -a
+
 镜像命令
 
 ```shell
@@ -194,7 +216,7 @@ docker start 6798ad5a0ba1
 docker attach 6798ad5a0ba1
 
 
-docker run -d -p 3306:3306 -v /Users/qgs/Desktop/docker/mysql/conf:/ect/mysql/conf.d -v //Users/qgs/Desktop/docker/mysql/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root mysql/mysql-server
+docker run -d -p 3306:3306 -v /Users/qgs/Desktop/docker/mysql/conf:/ect/mysql/conf.d -v /Users/qgs/Desktop/docker/mysql/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root mysql/mysql-server
 -d 后台运行
 -p 端口映射
 -v 卷挂载
@@ -232,7 +254,112 @@ docker volume inspect mysql/mysql-server # 查看挂载信息
 
 docker run -d -P --name nginx-1 -v name-nginx:/etc/nginx:ro nginx
 ro: 只能通过宿主机操作，容器内不能修改
-rw: 
+rw: 读写
+```
+
+
+
+#### Dockerfile
+
+docker镜像的构建文件
+
+```shell
+# 构建文件内容(全大写)
+FROM centos
+VOLUME ["volume01", "volume02"] # 匿名挂载卷，容器内的路径
+CMD echo "end..."
+CMD /bin/bash
+
+# 构建
+docker build -f /构建文件地址 -t my-centos . # 当前目录
+
+# 发布镜像
+docker push
+```
+
+
+
+```shell
+# dockerfile指令
+
+from          # 基础镜像
+maintainer    # 维护者信息
+run           # 构建的时候运行的命令
+add           # 加一下文件
+workdir       # 工作目录
+volume        # 挂载目录
+expost        # 暴露端口
+cmd           # 启动容器时执行的命令；如果指定了多条命令，只有最后一条会被执行。
+entrypoint    # 追加
+onbuild       # 配置当所创建的镜像作为其它新创建镜像的基础镜像时，所执行的操作指令。
+copy          # 复制本地主机的 <src>（为 Dockerfile 所在目录的相对路径）到容器中的 <dest>
+env           # 环境变量，会被后续 RUN 指令使用，并在容器运行时保持。
+```
+
+```shell
+# 构建一个centos
+
+FROM scratch
+ADD centos-7-x86_64-docker.tar.xz /
+
+LABEL \
+    org.label-schema.schema-version="1.0" \
+    org.label-schema.name="CentOS Base Image" \
+    org.label-schema.vendor="CentOS" \
+    org.label-schema.license="GPLv2" \
+    org.label-schema.build-date="20201113" \
+    org.opencontainers.image.title="CentOS Base Image" \
+    org.opencontainers.image.vendor="CentOS" \
+    org.opencontainers.image.licenses="GPL-2.0-only" \
+    org.opencontainers.image.created="2020-11-13 00:00:00+00:00"
+
+CMD ["/bin/bash"]
+
+# --------------
+FROM centos
+MAINTAINER qgs
+
+ENV MYPATH /usr/local    # 配置一些环境变量
+WORKDIR $MYPATH          # 使用上面的变量
+
+RUN yum -y install vim
+RUN yum -y install net-tools
+
+EXPOSE 80
+
+CMD echo $MYPATH
+CMD echo "end..."
+CMD /bin/bash
+
+# ------------
+docker build -f dockerfile.txt -t centos-vim .
+```
+
+
+
+
+
+#### 数据卷容器
+
+容器间进行数据共享(配置文件，数据文件)
+
+```shell
+docker run -it --name centos01 e2b8b2bb810d
+control + p + q # 后台运行
+docker run -it --name centos02 --volumes-from centos01  e2b8b2bb810d          
+docker run -it --name centos03 --volumes-from centos01  e2b8b2bb810d 
+
+--volumes-from 容器间数据共享
+
+docker rm -f centos01 # 删除01之后其他还在
+```
+
+```shell
+# 多个mysql数据共享
+
+docker run -d -p 3306:3306 -v /ect/mysql/conf.d -v /var/lib/mysql -e MYSQL_ROOT_PASSWORD=root --name mysql01 mysql/mysql-server # 先启动一个
+
+docker run -d -p 3307:3306 -e MYSQL_ROOT_PASSWORD=root --name mysql02 --volumes-from mysql01 # 启动另一个
 ```
 
 
