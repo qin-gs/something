@@ -6,7 +6,7 @@ https://hub.docker.com/
 
 #### 内容
 
-
+<img src="./img/docker内容.png" alt="docker内容" style="zoom: 25%;" />
 
 #### 出现原因
 
@@ -294,6 +294,16 @@ entrypoint    # 追加
 onbuild       # 配置当所创建的镜像作为其它新创建镜像的基础镜像时，所执行的操作指令。
 copy          # 复制本地主机的 <src>（为 Dockerfile 所在目录的相对路径）到容器中的 <dest>
 env           # 环境变量，会被后续 RUN 指令使用，并在容器运行时保持。
+
+
+cmd & entrypoint # 区别
+# --- 一个镜像
+FROM centos
+CMD ["ls", "-a"]
+ENTRYPOINT ["ls", "-a"]
+
+# --- 运行
+docker run centos-ls -l # 如果是 cmd 会报错，如果是 entrypoint 真正执行的是 ls -al
 ```
 
 ```shell
@@ -362,5 +372,73 @@ docker run -d -p 3306:3306 -v /ect/mysql/conf.d -v /var/lib/mysql -e MYSQL_ROOT_
 docker run -d -p 3307:3306 -e MYSQL_ROOT_PASSWORD=root --name mysql02 --volumes-from mysql01 # 启动另一个
 ```
 
+```shell
+# tomcat 镜像
 
+FROM centos
+MAINTAINER qgs
+
+COPY readme.md /usr/local/readme.md
+
+ADD jdk-11.0.13_linux-x64_bin.tar.gz /usr/local/
+ADD apache-tomcat-8.5.73.tar.gz /usr/local/
+
+RUN yum -y install vim
+RUN yum -y install glibc.i686
+
+ENV MYPATH /usr/local
+WORKDIR $MYPATH
+
+ENV JAVA_HOME /usr/local/jdk-11.0.13
+
+ENV CATALINA_HOME /usr/local/apache-tomcat-8.5.73
+ENV CATALINA_BASH /usr/local/apache-tomcat-8.5.73
+
+ENV PATH $PATH;$JAVA_HOME/bin;$CATALINA_HOME/lib;$CATALINA_HOME/bin     
+
+EXPOSE 8080
+
+CMD /usr/local/apache-tomcat-8.5.73/bin/startup.sh && tail -F /usr/local/apache-tomcat-8.5.73/bin/logs/catalina.out
+
+# 构建
+
+# 运行
+
+docker run -d -p 8080:8080 --name centos-java-tomcat -v /Users/qgs/Desktop/docker/tomcat/webapps:/usr/local/apache-tomcat-8.5.73/webapps -v /Users/qgs/Desktop/docker/tomcat/logs:/usr/local/apache-tomcat-8.5.73/logs centos-java-tomcat
+```
+
+
+
+#### 发布镜像到 dockerhub
+
+```shell
+# 登录
+docker login -u qinguishuang
+dockerHm587833
+
+# 添加一个tag
+docker tag 镜像id tag:1.0
+# 发布
+docker push 镜像id
+```
+
+
+
+#### 发布镜像到aliyun
+
+```shell
+https://cr.console.aliyun.com/cn-hangzhou/instances
+https://cr.console.aliyun.com/cn-hangzhou/instance/repositories
+```
+
+
+
+#### docker网络
+
+```shell
+ docker run -p 8080:8080 --name tomcat01 -d qinguishuang/tomcat-webapps:1.0 
+ 
+ 
+ 
+```
 
