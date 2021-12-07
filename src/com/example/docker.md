@@ -436,9 +436,54 @@ https://cr.console.aliyun.com/cn-hangzhou/instance/repositories
 #### docker网络
 
 ```shell
- docker run -p 8080:8080 --name tomcat01 -d qinguishuang/tomcat-webapps:1.0 
- 
- 
- 
+docker run -p 8080:8080 --name tomcat01 -d qinguishuang/tomcat-webapps:1.0
+
+# 每启动一个容器，docker会给容器分配一个ip，同时多一对网卡
+# 安装docker之后，会有一个网卡 docker0(类似于一个路由器)
+# 通过桥接模式 evth-pair：一对虚拟设备接口，作为桥梁连接虚拟网络设置
+# 容器之间可以 ping通
+
+# 容器互联(通过容器名互相访问)
+docker run -p 8080:8080 --name tomcat01 -d qinguishuang/tomcat-webapps:1.0
+docker run -p 8081:8080 --name tomcat02 -d qinguishuang/tomcat-webapps:1.0
+docker exec -it tomcat01 ping tomcat02 
+
+docker run -p 8082:8080 --name tomcat02 --link tomcat03 -d qinguishuang/tomcat-webapps:1.0 # /ect/hosts 里面写死了 tomcat02 的ip地址 和 容器id
+```
+
+
+
+#### 自定义网络
+
+```shell
+网络模式
+
+bridge    : 桥接
+none      : 不配置网络
+host      : 和宿主机共享网络
+container : 容器内网络联通
+
+docker run -d -p 8080:8080 --name tomcat01 --net bridge tomcat
+
+# 自定义网络
+docker network create --driver bridge --subnet 192.168.0.0/16 --gateway 192.168.0.1 mynet
+docker network ls
+
+docker network inspect mynet
+
+# 将自己的服务放到自定义网络中
+docker run -d -p 8080:8080 --name tomcat-net-01 --net mynet tomcat # -P 随机端口
+
+# 自定义网络可以通过名称进行 ping
+# 自动维护对应关系
+```
+
+
+
+容器和网络连通
+
+```shell
+docker network connect mynet tomcat01
+# 一个容器，两个ip
 ```
 
