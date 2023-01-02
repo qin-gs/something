@@ -1,22 +1,22 @@
-### Docker
+# Docker
 
 http://www.docker.com/
 
 https://hub.docker.com/
 
-#### 内容
+## 内容
 
 <img src="./img/docker内容.png" alt="docker内容" style="zoom: 25%;" />
 
-#### 出现原因
+出现原因
 
 
 
-#### 作用
+作用
 
 
 
-#### 常用命令
+## 常用命令
 
 ```
 docker version
@@ -122,7 +122,7 @@ docker stop 容器id # 停止正在运行的容器
 docker kill 容器id
 ```
 
-#### 其他命令
+## 其他命令
 
 ```shell
 后台启动容器
@@ -179,7 +179,7 @@ docker stats # 查看docker的内存使用情况
 
 
 
-#### 可视化
+## 可视化
 
 portainer 图形化界面管理工具
 
@@ -200,7 +200,7 @@ docker run -d -p 8080:8080 --name tomcat01 tomcat-webapps:1.0
 
 
 
-#### 容器数据卷
+## 容器数据卷
 
 一种同步机制(将数据持久化)
 
@@ -259,7 +259,7 @@ rw: 读写
 
 
 
-#### Dockerfile
+## Dockerfile
 
 docker镜像的构建文件
 
@@ -349,7 +349,7 @@ docker build -f dockerfile.txt -t centos-vim .
 
 
 
-#### 数据卷容器
+## 数据卷容器
 
 容器间进行数据共享(配置文件，数据文件)
 
@@ -409,7 +409,7 @@ docker run -d -p 8080:8080 --name centos-java-tomcat -v /Users/qgs/Desktop/docke
 
 
 
-#### 发布镜像到 dockerhub
+## 发布镜像到 dockerhub
 
 ```shell
 # 登录
@@ -424,7 +424,7 @@ docker push 镜像id
 
 
 
-#### 发布镜像到aliyun
+## 发布镜像到aliyun
 
 ```shell
 https://cr.console.aliyun.com/cn-hangzhou/instances
@@ -433,7 +433,7 @@ https://cr.console.aliyun.com/cn-hangzhou/instance/repositories
 
 
 
-#### docker网络
+## docker网络
 
 ```shell
 docker run -p 8080:8080 --name tomcat01 -d qinguishuang/tomcat-webapps:1.0
@@ -453,7 +453,7 @@ docker run -p 8082:8080 --name tomcat02 --link tomcat03 -d qinguishuang/tomcat-w
 
 
 
-#### 自定义网络
+## 自定义网络
 
 ```shell
 网络模式
@@ -486,4 +486,648 @@ docker run -d -p 8080:8080 --name tomcat-net-01 --net mynet tomcat # -P 随机�
 docker network connect mynet tomcat01
 # 一个容器，两个ip
 ```
+
+
+
+
+
+
+
+## 部署 springboot
+
+dockerfile 编写
+
+```shell
+FROM java:8
+EXPOSE 8080
+
+VOLUME /tmp
+ENV TZ=Asian/Shanghai
+RUN ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime && echo "${TZ}" > /etc/timezone
+
+# 把 jar 包复制到容器
+ADD spring-boot-example.jar /spring-boot-example.jar
+RUN bash -c 'touch /spring-boot-example.jar'
+ENTRYPOINT ["java", "-jar", "spring-boot-example.jar"]
+```
+
+
+
+```shell
+# 启动
+
+
+docker run -p 6379:6379 -d --name="redis" redis
+
+# 给 redis 起别名，在 springboot 的配置文件中不能写 localhost
+docker run -p 8080:8080 --name example --link redis:myRedis --platform linux/amd64 -d spring-boot-example
+```
+
+
+
+
+
+## docker-compose
+
+- 服务 service
+- 工程 project
+
+
+
+服务保证先后顺序，服务故障重启后 ip 可能会改变
+
+```sh
+docker run -d -p 6001:6001 -v /local:/docker --network a_network --name a-service a-service:1.0
+```
+
+
+
+代码中连接 mysql 时 `jdbc:mysql://mysql:3306/service`  不固定 host
+
+```sh
+docker-compose config -q # 测试 yml 语法
+docker-compose up -d # 启动
+```
+
+
+
+```yaml
+version: "3.8"
+
+services:
+  microService:
+    image: a-service:1.0
+    container_name: a-service
+    ports:
+      - "6001:6001"
+    volumes:
+      - /local:/docker
+    networks:
+      - a-network
+    depends_on:
+      - redis
+      - mysql
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - /qgs/redis.conf:/etc/redis/redis.conf
+      - /qgs/data:/data
+    networks:
+      - a-network
+    command: redis-server /etc/redis/redis.conf
+
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'no'
+      MYSQL_DATABASE: 'service'
+      MYSQL_USER: 'root'
+      MYSQL_PASSWORD: "root"
+    ports:
+      - "3306:3306"
+    volumes:
+      - /qgs/db:/var/lib/mysql
+      - /qgs/my.conf:/etc/my.cnf
+      - /qgs/init:/docker-entrypoint-initdb.d
+    networks:
+      - a-network
+    command: --default-authentication-plugin=mysql_native_password
+
+networks:
+  a-network:
+
+```
+
+
+
+
+
+
+
+
+
+
+
+# Kubernetes
+
+
+
+## 组件
+
+[参考](https://kubernetes.io/zh-cn/docs/concepts/overview/components/)
+
+![components-of-kubernetes](./assets/components-of-kubernetes.svg)
+
+- 控制平面组件 (control plane component)
+  - kube-apiserver
+  - etcd
+  - kube-scheduler
+  - kube-controller-manager
+  - cloud-controller-manager
+- Node 组件
+  - kubelet
+  - kube-proxy
+  - 容器运行时
+
+
+
+service 作为访问入口，由 controller 创建 pod 进行部署
+
+- Pod
+
+  - 最小部署单元
+
+  - 一组容器集合
+
+    一个 docker 对应一个容器，一个 pod 有多个容器，一个容器里面运行一个应用程序
+
+  - 共享网络
+
+  - 生命周期短暂
+
+- controller
+
+  - 确保 pod 副本数量
+  - 有/无 状态应用部署
+  - 一次性任务 和 定时任务
+
+- service
+
+  - 定义一组 pod 访问规则
+
+
+
+## kubectl 命令
+
+```sh
+kubectl [command] [TYPE] [NAME] [flags]
+kubectl [command] [type] [name1 name2] [flags]
+kubectl [command] [type/name] [type/name] [flags]
+
+kubectl get pod nginx tomcat
+kubectl get pod/nginx pod/tomcat
+
+
+command: create/get/describe/delete
+type: 资源类型 (pod)
+name: 资源名称
+flags: 可选参数，-s --server 指定 kubernetes api 服务器的地址和端口
+```
+
+```sh
+# 创建服务 暴露服务
+kubectl create deployment nginx --image=nginx
+kubectl expose deployment nginx --port=80 --type=NodePort
+```
+
+
+
+`kubectl api-resources`
+
+没有 yml 文件的情况下杀出 pod 
+
+```sh
+kubectl get deploy
+kubectl delete deploy xxx
+```
+
+
+
+yml 文件生成
+
+- `kubectl create deployment nginx-80 --image=nginx -o yaml --dry-run=none > nginx.yml`
+- `kubectl get deploy nginx-80 -o=yaml --export > nginx.yaml`
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2 # 告知 Deployment 运行 2 个与该模板匹配的 Pod
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+```
+
+
+
+## 拉取策略
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.21.0
+      imagePullPolicy: Always / IfNotPresent / Never
+
+```
+
+
+
+## 资源限制
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysql
+spec:
+  containers:
+    - name: db
+      image: mysql:5.7
+      env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "root"
+      resources:
+        requests: # 预估申请
+          memory: "1024Mi"
+          cpu: "256m"
+        limits: # 最大限额
+          memory: "4096Mi"
+          cpu: "1024m"
+```
+
+
+
+## 重启机制
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.21.0
+      imagePullPolicy: Always
+  restartPolicy: Always(每次都重启) / OnFailure(异常退出才重启) / Never(不重启)
+```
+
+
+
+## 健康检查
+
+- 存活检查：检查失败，杀掉容器然后根据 restartPolicy 决定是否重启
+- 就绪检查：检查失败把 pod 从 service endpoints 中剔除
+
+检查方法
+
+- httpGet：返回 200 - 400 为成功
+- exec：执行 shell 命令返回状态码为 0 则成功
+- tcpSocket：发起 tcp ，socket 建立成功
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.21.0
+      imagePullPolicy: Always
+      args:
+        - /bin/bash
+        - -c
+        - touch /tmp/health; sleep 30; rm -rf /tmp/health
+      livenessProbe:
+        exec:
+          command:
+            - cat
+            - /tmp/health
+        initialDelaySeconds: 5 # 在容器启动后，延时多少秒才开始探测
+        periodSeconds: 5
+  restartPolicy: Always
+
+```
+
+
+
+## 调度策略
+
+
+
+**标签** (nodeSelector)
+
+```sh
+kubectl label nodes <your-node-name> disktype=ssd
+kubectl label nodes <your-node-name> disktype-
+
+kubectl get nodes --show-labels
+```
+
+
+
+**亲和性 **(affinity)
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: env_roles
+                operator: In
+                values:
+                  - dev
+                  - test
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - preference:
+            matchExpressions:
+              - key: group
+                operator: In
+                values:
+                  - other
+          weight: 1
+  containers:
+    - name: nginx
+      image: nginx:1.21.0
+      imagePullPolicy: Always
+
+```
+
+
+
+**污点 和 容忍度**
+
+pod 配置容忍度，node 配置污点
+
+用来避免 Pod 被分配到不合适的节点上
+
+```sh
+# 添加/删除 污点
+kubectl taint nodes node1 key1=value1:NoSchedule
+kubectl taint nodes node1 key1:NoSchedule-
+```
+
+- NoSchedule：一定不被调度
+- PreferNoSchedule：尽量不被调度
+- NoExecute：不会调度且驱逐当前 node 已有 pod
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  tolerations:
+    - key: "k1"
+      operator: "Equal"
+      value: "v1"
+      effect: "NoSchedule"
+  containers:
+    - name: nginx
+      image: nginx:1.21.0
+      imagePullPolicy: Always
+```
+
+
+
+## Controller
+
+在集群上管理和运行容器的对象
+
+- 确保 pod 副本数量
+- pod 通过 controller 实现应用的运维 (伸缩，升级)
+- pod 和 controller 之间通过 label 建立关系 (selector)
+
+
+
+**deployment**
+
+- 无状态应用
+- 管理 pod 和 ReplicaSet
+- 部署，滚动升级
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.21.0
+          imagePullPolicy: Always
+
+```
+
+`kubectl expose deployment nginx --port=80 --type=NodePort --target-port=80 --name=nginx -o yaml > nginx-nodeport.yml`
+
+
+
+`kubectl set image deployment nginx nginx=nginx:1.21.1 `
+
+`kubectl rollout status deployment nginx `
+
+`kubectl rollout history deployment nginx`
+
+`kubectl rollout undo deployment nginx`
+
+`kubectl rollout undo deployment nginx --to-revision=1`
+
+`kubectl scale deployment nginx --replicas=3`
+
+
+
+**StatefulSet**
+
+`主机名.service名称.命名空间.svc.cluster.local`
+
+
+
+
+
+**DaemonSet**
+
+在每个 node 上运行一个 pod，
+
+
+
+**Job**
+
+**CronJob**
+
+
+
+## Service
+
+定义一组 pod 的访问规则
+
+- 防止 pod 失联 (服务发现)
+- 定义一组 pod 访问策略 (负载均衡)
+- pod 和 service 使用 label 和 selector 建立关联
+
+
+
+三种类型
+
+- ClusterIP：集群内部访问
+- NodePort：对外暴露
+- LoadBalancer：云服务外部访问
+
+
+
+## 配置管理
+
+- Secret
+
+  - 创建加密数据
+
+    ```yaml
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: a-secret
+    data:
+      username: cm9vdA==
+      password: cm9vdA==
+    ```
+
+  - 以变量的形式挂载到 pod 中
+
+    进入容器可以查看 `echo $secret_username`
+
+    ```yaml
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: nginx
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: nginx
+      template:
+        metadata:
+          labels:
+            app: nginx
+        spec:
+          containers:
+            - name: nginx
+              image: nginx:1.21.0
+              imagePullPolicy: Always
+              env:
+                - name: secret_username
+                  valueFrom:
+                    secretKeyRef:
+                      name: a-secret
+                      key: username
+                - name: secret_password
+                  valueFrom:
+                    secretKeyRef:
+                      key: password
+                      name: a-secret
+    ```
+
+  - 以 volume 的形式挂载 pod 容器
+
+    进入容器后 /etc/nginx 目录下会有两个文件 username, password
+
+    ```yaml
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: nginx
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: nginx
+      template:
+        metadata:
+          labels:
+            app: nginx
+        spec:
+          containers:
+            - name: nginx
+              image: nginx:1.21.0
+              imagePullPolicy: Always
+              volumeMounts:
+                - mountPath: /etc/nginx
+                  name: foo
+                  readOnly: false
+          volumes:
+            - name: foo
+              secret:
+                secretName: a-secret
+    ```
+
+    
+
+- ConfigMap
+
+  创建
+
+  ```yaml
+  
+  ```
+
+  ```sh
+  # 从 properties 文件创建 ConfigMap
+  kubectl create configmap spring-boot-cm --from-file=application.properties
+  ```
+
+  - 以 volume 挂载到 pod
+
+    ```yaml
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.21.0
+          command: ['/bin/sh', '-c', 'cat /etc/config/application.properties']
+          volumeMounts:
+            - mountPath: /ect/config
+              name: application-config
+      volumes:
+        - name: springboot-cm
+          configMap:
+            name: springboot-cm
+    ```
+
+  - 以变量的形式挂载到 pod
+
+
+
+## 安全机制
+
+认证，授权，准入控制
 
