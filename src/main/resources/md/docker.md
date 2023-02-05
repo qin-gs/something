@@ -1131,3 +1131,161 @@ spec:
 
 认证，授权，准入控制
 
+
+
+命名空间
+
+```yaml
+kubectl get ns
+# 创建命名空间
+kubectl create ns qgs
+# 指定命名空间创建 pod
+kubectl run nginx --image=nginx:1.20.0 -n qgs
+```
+
+
+
+创建角色
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nginx
+  namespace: qgs
+rules:
+  - apiGroups:
+      -
+    resources:
+      - pods
+    verbs:
+      - get
+      - watch
+      - list
+```
+
+
+
+创建角色绑定
+
+```yaml
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: read-pods
+  namespace: qgs
+subjects:
+  - kind: User
+    name: qqq
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pod-reader
+```
+
+
+
+使用证书识别身份
+
+
+
+## Ingress
+
+
+
+pod 和 ingress 通过 service 关联
+
+ingress 作为统一入口，由 service 关联一种 pod
+
+
+
+部署 ingress controller
+
+创建 ingress 规则
+
+```yaml
+# 创建 nginx 向外暴露
+kubectl create deployment nginx --image=nginx:1.20.0
+kubectl expose deployment nginx --port=80 --target-port=80 --type=NodePort
+# 
+
+```
+
+
+
+## Helm
+
+包管理工具
+
+1. 将 yaml 文件作为一个整体关联
+
+2. 实现 yaml 的复用
+
+3. 应用级别的版本管理
+
+
+
+- Helm：命令行客户端工具
+- Chart：yaml 集合
+- Release：基于 chart 部署实体，应用级别的版本管理
+
+
+
+```sh
+helm add repo stable http://mirror.kaiyuanshe.cn/kubernetes/charts/
+helm repo list
+
+helm search repo tomcat
+helm install tomcat-7 stable/tomcat
+helm uninstall tomcat-7
+helm list
+helm status tomcat-7
+
+kubectl get svc
+kubectl edit svc tomcat-7
+```
+
+
+
+自己创建 Chart
+
+```sh
+helm create my-tomcat
+```
+
+Chart.yaml：当前 chart 属性配置信息
+
+templates：自己的 yaml
+
+value.yaml：全局变量
+
+```sh
+kubectl create deployment my-nginx --image=nginx --dry-run=client -o yaml > my-nginx.yaml
+kubectl expose deployment my-nginx --port=80 --target-port=80 --type=NodePort --dry-run=client -o yaml > my-service.yaml
+
+
+helm install my-nginx
+helm upgrade my-nginx
+```
+
+
+
+
+
+## 持久化存储
+
+
+
+- nfs 网络存储
+- pv 和 pvc
+  - pv：对存储资源进行抽象，对外提供可以调用的地方 (运维处理)
+  - pvc：用于调用，不关心内部细节 (自己提供)
+
+
+
+
+
+
+
+
+
