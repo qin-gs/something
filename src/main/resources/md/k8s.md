@@ -52,7 +52,16 @@
 
 ### pod 生命周期
 
-### pod 控制器
+
+
+### pod 控制器 Controller
+
+通过监控集群 的公共状态，并致力于将当前状态转变为期望的状态。
+
+- Deployment ：ReplicaSet 管理
+- Daemonset
+- Statefulset
+- Job
 
 
 

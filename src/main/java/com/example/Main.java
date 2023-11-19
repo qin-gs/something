@@ -2,13 +2,14 @@ package com.example;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 public class Main {
 
     public static void main(String[] args) {
-        List<String> list = Arrays.asList("q", "ww", "eee", "rrrrr");
-        list.forEach(x -> {
-            System.out.println(x.length());
-        });
+        Random random = new Random();
+        for (int i = 0; i < 12 * 24; i++) {
+            System.out.println(random.nextInt(100));
+        }
     }
 }

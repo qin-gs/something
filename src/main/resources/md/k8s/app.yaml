@@ -1,0 +1,60 @@
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-redis
+spec:
+  restartPolicy: Always
+  containers:
+    - name: nginx
+      image: nginx:1.21.0
+      ports:
+        - containerPort: 80
+      imagePullPolicy: Always
+      resources:
+        limits:
+          memory: 1024M
+        requests:
+          memory: 512M
+          cpu: "1" # 100m = 0.1 毫核
+      args:
+        - /bin/sh
+        - -c
+        - sleep 7; nginx -g "daemon off;"
+      livenessProbe:
+        exec:
+          command:
+            - ls
+            - /var/run/nginx.pid
+#        tcpSocket:
+#          port: 80
+#        httpGet:
+#          port: 80
+#          path: /index.html
+        initialDelaySeconds: 5 # 容器启动后延迟时间 5 秒启动探针
+        periodSeconds: 4 # 执行探测的时间间隔
+        timeoutSeconds: 1 # 探测的超时后等待多少秒
+        failureThreshold: 3 # 失败 3 次后重新启动 pod
+        successThreshold: 1 # 被视为成功的最小连续成功数
+      lifecycle:
+        postStart:
+          exec:
+            command: ["/bin/sh", "-c", "ls -al >> /postStart.txt"]
+        preStop:
+          exec:
+            command: ["/bin/sh", "-c", "echo stop >> /preStop.txt"]
+    - name: redis
+      image: redis:5.0.10
+      ports:
+        - containerPort: 6379
+      command: ["redis-server"]
+      args: ["--appendonly yes"]
+      imagePullPolicy: Always
+
+
+
+
+# 进入指定 container
+# kubectl exec -it nginx-redis -c nginx bash
+# kubectl logs -f nginx-redis -c nginx
+
