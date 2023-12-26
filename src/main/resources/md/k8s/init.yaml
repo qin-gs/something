@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app.kubernetes.io/name: MyApp
+spec:
+  # 通 label 调度节点
+  nodeSelector:
+    k: v
+  # 通过节点名称调度
+  nodeName: docker-desktop
+  # 节点亲和性
+  affinity:
+    nodeAffinity:
+      # 必须满足
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: k
+                operator: In
+                values:
+                  - v
+      # 尽量满足
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - preference:
+            matchExpressions:
+              - key: disk
+                operator: In
+                values:
+                  - ssd
+          weight: 8
+        - preference:
+            matchExpressions:
+              - key: disk
+                operator: In
+                values:
+                 - machinery
+          weight: 2
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - topologyKey: cpu
+  containers:
+    - name: myapp-container
+      image: busybox:1.28
+      command: ['sh', '-c', 'echo The app is running! && sleep 3600']
+  initContainers:
+    - name: init-my-service
+      image: busybox:1.28
+      command: ['sh', '-c', "echo init-my-service && sleep 2"]
+    - name: init-my-db
+      image: busybox:1.28
+      command: ['sh', '-c', "echo init-my-db && sleep 2"]
